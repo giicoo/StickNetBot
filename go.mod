@@ -4,7 +4,6 @@ go 1.20
 
 require (
 	github.com/BurntSushi/toml v1.3.2 // indirect
-	github.com/PaulSonOfLars/gotgbot/v2 v2.0.0-rc.20 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/fasthttp/router v1.4.20 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect

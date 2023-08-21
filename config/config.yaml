@@ -1,1 +1,15 @@
-level="Debug"
+welcome: 
+  phrase: "Hello \U0001F600 <strong>fdsfsd</strong>"
+  inline_keyboard:
+    row_1: 
+      btn_1: "Создание стикерпака"
+    row_2: 
+      btn_1: "Управление стикерпаком"
+  
+classicFsm:
+  start:
+    phrase: "Начало фсм \n Напишите название"
+    inline_keyboard: 
+      row_1:
+        btn_1: "Отмена"
+
