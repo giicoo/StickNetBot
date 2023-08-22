@@ -4,10 +4,14 @@ import "github.com/looplab/fsm"
 
 type FsmService struct {
 	FsmMap map[int64]*fsm.FSM
+	CtxKey struct{}
 }
 
 func NewFsmService() *FsmService {
-	return &FsmService{}
+	return &FsmService{
+		FsmMap: map[int64]*fsm.FSM{},
+		CtxKey: ctxKey{},
+	}
 }
 
 func (f *FsmService) NewClassicFsm(chat_id int64) {

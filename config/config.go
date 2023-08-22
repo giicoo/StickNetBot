@@ -32,6 +32,34 @@ type Config struct {
 				} `yaml:"row_1"`
 			} `yaml:"inline_keyboard"`
 		} `yaml:"start"`
+		Title struct {
+			Phrase         string `yaml:"phrase"`
+			InlineKeyboard struct {
+				Row1 struct {
+					Btn1 string `yaml:"btn_1"`
+				} `yaml:"row_1"`
+			} `yaml:"inline_keyboard"`
+		} `yaml:"title"`
+		Photo struct {
+			Phrase         string `yaml:"phrase"`
+			InlineKeyboard struct {
+				Row1 struct {
+					Btn1 string `yaml:"btn_1"`
+				} `yaml:"row_1"`
+			} `yaml:"inline_keyboard"`
+		} `yaml:"photo"`
+		Emoji struct {
+			Phrase         string `yaml:"phrase"`
+			InlineKeyboard struct {
+				Row1 struct {
+					Btn1 string `yaml:"btn_1"`
+					Btn2 string `yaml:"btn_2"`
+				} `yaml:"row_1"`
+				Row2 struct {
+					Btn1 string `yaml:"btn_1"`
+				} `yaml:"row_2"`
+			} `yaml:"inline_keyboard"`
+		} `yaml:"emoji"`
 	} `yaml:"classicFsm"`
 }
 

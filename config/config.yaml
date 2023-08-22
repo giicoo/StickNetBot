@@ -12,4 +12,21 @@ classicFsm:
     inline_keyboard: 
       row_1:
         btn_1: "Отмена"
-
+  title:
+    phrase: "Вы написали название %v\nОтправьте фото"
+    inline_keyboard: 
+      row_1:
+        btn_1: "Отмена"
+  photo:
+    phrase: "Отправьте эмоджи %v"
+    inline_keyboard: 
+      row_1:
+        btn_1: "Отмена"
+  emoji:
+    phrase: "Стикерпак с названием: <strong>%v</strong>\nДобавьте еще стикер или опубликуйте набор"
+    inline_keyboard: 
+      row_1:
+        btn_1: "Еще"
+        btn_2: "Создать"
+      row_2:
+        btn_1: "Отмена"

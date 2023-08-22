@@ -13,16 +13,11 @@ type classicFsm *fsm.FSM
 
 func newClassicFsm() *fsm.FSM {
 	fs := fsm.NewFSM(
-		"classicStick",
+		"start",
 		fsm.Events{
 			{
-				Name: "reset",
-				Src:  []string{"title_set", "photo_set", "emoji_set", "check_end"},
-				Dst:  "classicStick",
-			},
-			{
 				Name: "title",
-				Src:  []string{"classicStick"},
+				Src:  []string{"start"},
 				Dst:  "title_set",
 			},
 			{
@@ -36,11 +31,6 @@ func newClassicFsm() *fsm.FSM {
 				Dst:  "emoji_set",
 			},
 			{
-				Name: "more",
-				Src:  []string{"emoji_set"},
-				Dst:  "title_set",
-			},
-			{
 				Name: "end",
 				Src:  []string{"emoji_set"},
 				Dst:  "check_end",
@@ -52,17 +42,17 @@ func newClassicFsm() *fsm.FSM {
 			},
 		},
 		fsm.Callbacks{
-			"title_set": func(ctx context.Context, e *fsm.Event) {
-				e.FSM.SetMetadata("title", ctx.Value(ctxKey{}))
-				fmt.Printf("Set title %v", ctx.Value(ctxKey{}))
+			"title": func(ctx context.Context, e *fsm.Event) {
+				e.FSM.SetMetadata("title", ctx.Value(struct{}{}))
+				fmt.Printf("\nSet title %v\n", ctx.Value(struct{}{}))
 			},
-			"photo_set": func(ctx context.Context, e *fsm.Event) {
-				e.FSM.SetMetadata("photo", ctx.Value(ctxKey{}))
-				fmt.Printf("Set photo %v", ctx.Value(ctxKey{}))
+			"photo": func(ctx context.Context, e *fsm.Event) {
+				e.FSM.SetMetadata("photo", ctx.Value(struct{}{}))
+				fmt.Printf("\nSet photo %v\n", ctx.Value(struct{}{}))
 			},
-			"emoji_set": func(ctx context.Context, e *fsm.Event) {
-				e.FSM.SetMetadata("emoji", ctx.Value(ctxKey{}))
-				fmt.Printf("Set emoji %v", ctx.Value(ctxKey{}))
+			"emoji": func(ctx context.Context, e *fsm.Event) {
+				e.FSM.SetMetadata("emoji", ctx.Value(struct{}{}))
+				fmt.Printf("\nSet emoji %v\n", ctx.Value(struct{}{}))
 			},
 			"create_done": func(ctx context.Context, e *fsm.Event) {
 				title, ok := e.FSM.Metadata("title")
