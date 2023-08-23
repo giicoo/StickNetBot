@@ -24,6 +24,7 @@ func ClassicFsmPredicate(step string, fsm *fsmService.FsmService) th.Predicate {
 }
 func StartClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmService) th.Handler {
 	return func(bot *telego.Bot, update telego.Update) {
+		log.Info("start")
 
 		// init vars
 		callback_id := update.CallbackQuery.ID
@@ -61,6 +62,7 @@ func StartClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmS
 
 func TitleClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmService) th.Handler {
 	return func(bot *telego.Bot, update telego.Update) {
+		log.Info("title")
 		// init vars
 		user_id := tu.ID(update.Message.From.ID)
 		title := update.Message.Text
@@ -147,6 +149,41 @@ func EmojiClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmS
 		_, err := bot.SendMessage(msg)
 		if err != nil {
 			log.Errorf("send message to %v chat: %v", user_id, err)
+		}
+	}
+}
+
+func MoreClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmService) th.Handler {
+	return func(bot *telego.Bot, update telego.Update) {
+		log.Info("1")
+		callback := update.CallbackQuery
+		callback_id := callback.ID
+		user_id := tu.ID(callback.From.ID)
+
+		fsm.FsmMap[user_id.ID].Event(context.TODO(), "title")
+		title, _ := fsm.FsmMap[user_id.ID].Metadata("title")
+		msg_text := fmt.Sprintf(cfg.ClassicFsmGroup.Title.Phrase, title)
+
+		inline_keyboard := tu.InlineKeyboard(
+			tu.InlineKeyboardRow(
+				tu.InlineKeyboardButton(cfg.ClassicFsmGroup.Title.InlineKeyboard.Row1.Btn1).WithCallbackData("cancel_start"),
+			),
+		)
+
+		msg := tu.Message(user_id, msg_text).WithReplyMarkup(inline_keyboard)
+		msg.ParseMode = telego.ModeHTML
+
+		_, err := bot.SendMessage(msg)
+		if err != nil {
+			log.Errorf("send message to %v chat: %v", user_id, err)
+		}
+
+		// answer callback query
+		call := tu.CallbackQuery(callback_id)
+
+		err = bot.AnswerCallbackQuery(call)
+		if err != nil {
+			log.Errorf("send answer callback to %v callback: %v", callback_id, err)
 		}
 	}
 }

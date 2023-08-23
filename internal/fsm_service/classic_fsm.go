@@ -40,6 +40,11 @@ func newClassicFsm() *fsm.FSM {
 				Src:  []string{"check_end"},
 				Dst:  "create_done",
 			},
+			{
+				Name: "more",
+				Src:  []string{"title_set"},
+				Dst:  "photo_set",
+			},
 		},
 		fsm.Callbacks{
 			"title": func(ctx context.Context, e *fsm.Event) {
