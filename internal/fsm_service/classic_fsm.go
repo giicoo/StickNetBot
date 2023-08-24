@@ -7,7 +7,13 @@ import (
 	"github.com/looplab/fsm"
 )
 
-type ctxKey struct{}
+type sticker_pack struct {
+	Title  string
+	Sticks []struct {
+		Photo string
+		Emoji string
+	}
+}
 
 type classicFsm *fsm.FSM
 
@@ -17,7 +23,7 @@ func newClassicFsm() *fsm.FSM {
 		fsm.Events{
 			{
 				Name: "title",
-				Src:  []string{"start"},
+				Src:  []string{"start", "emoji_set"},
 				Dst:  "title_set",
 			},
 			{
@@ -31,19 +37,9 @@ func newClassicFsm() *fsm.FSM {
 				Dst:  "emoji_set",
 			},
 			{
-				Name: "end",
-				Src:  []string{"emoji_set"},
-				Dst:  "check_end",
-			},
-			{
-				Name: "create",
-				Src:  []string{"check_end"},
-				Dst:  "create_done",
-			},
-			{
 				Name: "more",
 				Src:  []string{"title_set"},
-				Dst:  "photo_set",
+				Dst:  "more_set",
 			},
 		},
 		fsm.Callbacks{
@@ -58,21 +54,6 @@ func newClassicFsm() *fsm.FSM {
 			"emoji": func(ctx context.Context, e *fsm.Event) {
 				e.FSM.SetMetadata("emoji", ctx.Value(struct{}{}))
 				fmt.Printf("\nSet emoji %v\n", ctx.Value(struct{}{}))
-			},
-			"create_done": func(ctx context.Context, e *fsm.Event) {
-				title, ok := e.FSM.Metadata("title")
-				if !ok {
-					fmt.Println("Dont have title")
-				}
-				photo, ok := e.FSM.Metadata("photo")
-				if !ok {
-					fmt.Println("Dont have photo")
-				}
-				emoji, ok := e.FSM.Metadata("emoji")
-				if !ok {
-					fmt.Println("Dont have emoji")
-				}
-				fmt.Printf("Title: %v\nPhoto: %v\nEmoji: %v\n", title, photo, emoji)
 			},
 		},
 	)

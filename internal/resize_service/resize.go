@@ -9,25 +9,21 @@ import (
 )
 
 type ResizeService struct {
-	path     string
+	Path     string
 	time_out time.Duration
 }
 
-func NewResizeService(path string, time_out time.Duration) *ResizeService {
+func NewResizeService(time_out time.Duration) *ResizeService {
 	return &ResizeService{
-		path:     path,
+		Path:     "./internal/resize_service/images",
 		time_out: time_out,
 	}
 }
 
-func (r *ResizeService) ResizeImage(file_name string, codec string) error {
-	buffer, err := bimg.Read(fmt.Sprintf("%v.%v", file_name, codec))
-	if err != nil {
-		return fmt.Errorf("read img '%v': %v", file_name, err)
-	}
-
-	if codec == "jpg" || codec == "jpeg" {
-		buffer, err = bimg.NewImage(buffer).Convert(bimg.PNG)
+func (r *ResizeService) ResizeImage(buffer []byte, file_name string, codec string) error {
+	if codec == "image/jpeg" {
+		buff, err := bimg.NewImage(buffer).Convert(bimg.PNG)
+		buffer = buff
 		if err != nil {
 			return fmt.Errorf("convert to png '%v': %v", file_name, err)
 		}
@@ -66,7 +62,7 @@ func (r *ResizeService) ResizeImage(file_name string, codec string) error {
 	_ = bimg.NewImage(buffer).Length()
 	// TODO: compress img if length > 512000
 
-	bimg.Write(fmt.Sprintf("new_%v.png", file_name), buffer)
+	bimg.Write(fmt.Sprintf("%v/new_%v.png", r.Path, file_name), buffer)
 	go r.DeleteFilesAfterTimer(file_name)
 	fmt.Println("delete timer start")
 	return nil
@@ -74,25 +70,10 @@ func (r *ResizeService) ResizeImage(file_name string, codec string) error {
 
 // Ignore errs because err will be if file don't exist
 func (r *ResizeService) DeleteFiles(file_name string) {
-	os.Remove(fmt.Sprintf("%v.png", file_name))
-	os.Remove(fmt.Sprintf("%v.jpg", file_name))
-	os.Remove(fmt.Sprintf("%v.jpeg", file_name))
-	os.Remove(fmt.Sprintf("new_%v.png", file_name))
-}
-
-func (r *ResizeService) DeleteFilesAfterTimer(file_name string) {
-	select {
-	case <-time.After(r.time_out):
-		r.DeleteFiles(file_name)
-	}
-}
-
-// Ignore errs because err will be if file don't exist
-func (r *ResizeService) DeleteFiles(file_name string) {
-	os.Remove(fmt.Sprintf("%v.png"))
-	os.Remove(fmt.Sprintf("%v.jpg"))
-	os.Remove(fmt.Sprintf("%v.jpeg"))
-	os.Remove(fmt.Sprintf("new_%v.png"))
+	// os.Remove(fmt.Sprintf("%v/%v.png", r.path, file_name))
+	// os.Remove(fmt.Sprintf("%v/%v.jpg", r.path, file_name))
+	// os.Remove(fmt.Sprintf("%v/%v.jpeg", r.path, file_name))
+	os.Remove(fmt.Sprintf("%v/new_%v.png", r.Path, file_name))
 }
 
 func (r *ResizeService) DeleteFilesAfterTimer(file_name string) {

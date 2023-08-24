@@ -3,9 +3,11 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/giicoo/StickAIBot/config"
 	fsmService "github.com/giicoo/StickAIBot/internal/fsm_service"
+	resizeService "github.com/giicoo/StickAIBot/internal/resize_service"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	tu "github.com/mymmrac/telego/telegoutil"
@@ -19,7 +21,7 @@ func ClassicFsmPredicate(step string, fsm *fsmService.FsmService) th.Predicate {
 		if !ok {
 			return false
 		}
-		return step_now.Current() == step
+		return step_now.Fsm.Current() == step
 	}
 }
 func StartClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmService) th.Handler {
@@ -62,15 +64,14 @@ func StartClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmS
 
 func TitleClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmService) th.Handler {
 	return func(bot *telego.Bot, update telego.Update) {
-		log.Info("title")
 		// init vars
 		user_id := tu.ID(update.Message.From.ID)
 		title := update.Message.Text
 		msg_text := fmt.Sprintf(cfg.ClassicFsmGroup.Title.Phrase, title)
 
 		// next fsm -> set_title
-		fsm.FsmMap[user_id.ID].Event(context.WithValue(context.Background(), struct{}{}, title), "title")
-
+		fsm.FsmMap[user_id.ID].Fsm.Event(context.WithValue(context.Background(), struct{}{}, title), "title")
+		fsm.FsmMap[user_id.ID].StickerPack.Title = title
 		// message with inline_keyboard
 		inline_keyboard := tu.InlineKeyboard(
 			tu.InlineKeyboardRow(
@@ -89,15 +90,28 @@ func TitleClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmS
 	}
 }
 
-func PhotoClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmService) th.Handler {
+func PhotoClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmService, resize *resizeService.ResizeService) th.Handler {
 	return func(bot *telego.Bot, update telego.Update) {
 		// init vars
 		user_id := tu.ID(update.Message.From.ID)
-		photo := update.Message.Text
+		photo := update.Message.Document
 		msg_text := fmt.Sprintf(cfg.ClassicFsmGroup.Photo.Phrase, photo)
 
-		// next fsm -> set+photo
-		fsm.FsmMap[user_id.ID].Event(context.WithValue(context.Background(), struct{}{}, photo), "photo")
+		file, _ := bot.GetFile(&telego.GetFileParams{
+			FileID: photo.FileID,
+		})
+
+		// Download file from Telegram using FileDownloadURL helper func to get full URL
+		fileData, err := tu.DownloadFile(bot.FileDownloadURL(file.FilePath))
+		err = resize.ResizeImage(fileData, fmt.Sprintf("%v_%v", user_id.ID, photo.FileID), photo.MimeType)
+		if err != nil {
+			log.Errorf("resize img: %v", err)
+		}
+
+		resize_photo, err := os.Open(fmt.Sprintf("%v/new_%v_%v.png", resize.Path, user_id.ID, photo.FileID))
+		if err != nil {
+			log.Errorf("open resize img: %v", err)
+		}
 
 		// message with inline_keyboard
 		inline_keyboard := tu.InlineKeyboard(
@@ -106,13 +120,23 @@ func PhotoClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmS
 			),
 		)
 
-		msg := tu.Message(user_id, msg_text).WithReplyMarkup(inline_keyboard)
-		msg.ParseMode = telego.ModeHTML
+		document := tu.Document(
+			user_id,
+			tu.File(resize_photo),
+		).WithCaption(msg_text).WithReplyMarkup(inline_keyboard)
+		document.ParseMode = telego.ModeHTML
 
-		_, err := bot.SendMessage(msg)
+		msg, err := bot.SendDocument(document)
 		if err != nil {
-			log.Errorf("send message to %v chat: %v", user_id, err)
+			log.Errorf("send document to %v chat: %v", user_id, err)
 		}
+
+		// next fsm -> set+photo
+		fsm.FsmMap[user_id.ID].Fsm.Event(context.WithValue(context.Background(), struct{}{}, photo), "photo")
+		fsm.FsmMap[user_id.ID].StickerPack.Sticks = append(fsm.FsmMap[user_id.ID].StickerPack.Sticks, struct {
+			Photo string
+			Emoji string
+		}{Photo: msg.Document.FileID})
 
 	}
 }
@@ -124,8 +148,8 @@ func EmojiClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmS
 		emoji := update.Message.Text
 
 		// next fsm -> set_emoji
-		fsm.FsmMap[user_id.ID].Event(context.WithValue(context.Background(), struct{}{}, emoji), "emoji")
-
+		fsm.FsmMap[user_id.ID].Fsm.Event(context.WithValue(context.Background(), struct{}{}, emoji), "emoji")
+		fsm.FsmMap[user_id.ID].StickerPack.Sticks[len(fsm.FsmMap[user_id.ID].StickerPack.Sticks)-1].Emoji = emoji
 		// message with inline_keyboard
 		inline_keyboard := tu.InlineKeyboard(
 			tu.InlineKeyboardRow(
@@ -136,13 +160,8 @@ func EmojiClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmS
 				tu.InlineKeyboardButton(cfg.ClassicFsmGroup.Emoji.InlineKeyboard.Row2.Btn1).WithCallbackData("cancel_start"),
 			),
 		)
-		title, ok := fsm.FsmMap[user_id.ID].Metadata("title")
-		if !ok {
-			log.Errorf("err get title for classicFsm")
-			title = "Не записалось, попробуйте позже"
-		}
 
-		msg_text := fmt.Sprintf(cfg.ClassicFsmGroup.Emoji.Phrase, title)
+		msg_text := fmt.Sprintf(cfg.ClassicFsmGroup.Emoji.Phrase)
 		msg := tu.Message(user_id, msg_text).WithReplyMarkup(inline_keyboard)
 		msg.ParseMode = telego.ModeHTML
 
@@ -155,14 +174,15 @@ func EmojiClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmS
 
 func MoreClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmService) th.Handler {
 	return func(bot *telego.Bot, update telego.Update) {
-		log.Info("1")
 		callback := update.CallbackQuery
 		callback_id := callback.ID
 		user_id := tu.ID(callback.From.ID)
 
-		fsm.FsmMap[user_id.ID].Event(context.TODO(), "title")
-		title, _ := fsm.FsmMap[user_id.ID].Metadata("title")
-		msg_text := fmt.Sprintf(cfg.ClassicFsmGroup.Title.Phrase, title)
+		log.Info(fsm.FsmMap[user_id.ID].Fsm.Current())
+		fsm.FsmMap[user_id.ID].Fsm.Event(context.Background(), "title")
+		log.Info(fsm.FsmMap[user_id.ID].Fsm.Current())
+		log.Info(fsm.FsmMap[user_id.ID].StickerPack)
+		msg_text := fmt.Sprintf(cfg.ClassicFsmGroup.Title.Phrase)
 
 		inline_keyboard := tu.InlineKeyboard(
 			tu.InlineKeyboardRow(

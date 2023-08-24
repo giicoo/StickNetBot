@@ -17,9 +17,9 @@ func (api *APIBot) initHandlers() {
 
 	// ___ classicFsm group ___
 	api.bh.Handle(handlers.StartClassicFsm(api.cfg, api.log, api.fsm), th.CallbackDataEqual("create_sticker_pack"))
-	api.bh.Handle(handlers.TitleClassicFsm(api.cfg, api.log, api.fsm), th.AnyMessage())
-	api.bh.Handle(handlers.CancelStart(api.cfg, api.log, api.fsm), th.CallbackDataEqual("more_classicFsm"))
-	api.bh.Handle(handlers.PhotoClassicFsm(api.cfg, api.log, api.fsm), handlers.ClassicFsmPredicate("title_set", api.fsm), th.AnyMessage())
+	api.bh.Handle(handlers.MoreClassicFsm(api.cfg, api.log, api.fsm), th.CallbackDataEqual("more_classicFsm"))
+	api.bh.Handle(handlers.TitleClassicFsm(api.cfg, api.log, api.fsm), handlers.ClassicFsmPredicate("start", api.fsm), th.AnyMessage())
+	api.bh.Handle(handlers.PhotoClassicFsm(api.cfg, api.log, api.fsm, api.resizeService), handlers.ClassicFsmPredicate("title_set", api.fsm), th.AnyMessage())
 	api.bh.Handle(handlers.EmojiClassicFsm(api.cfg, api.log, api.fsm), handlers.ClassicFsmPredicate("photo_set", api.fsm), th.AnyMessage())
 	// ________________________
 

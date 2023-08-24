@@ -1,8 +1,11 @@
 package main
 
 import (
+	"time"
+
 	"github.com/giicoo/StickAIBot/config"
 	fsmService "github.com/giicoo/StickAIBot/internal/fsm_service"
+	resizeService "github.com/giicoo/StickAIBot/internal/resize_service"
 	telegramService "github.com/giicoo/StickAIBot/internal/telegram_service"
 	"github.com/giicoo/StickAIBot/pkg/logger"
 	"github.com/joho/godotenv"
@@ -26,8 +29,11 @@ func main() {
 
 	// init fsm
 	rootFSM := fsmService.NewFsmService()
+
+	// init resize
+	resize := resizeService.NewResizeService(1 * time.Minute)
 	// create bot
-	api, err := telegramService.CreateBot(log, cfg, rootFSM)
+	api, err := telegramService.CreateBot(log, cfg, rootFSM, resize)
 	if err != nil {
 		log.Panicf("create bot: %v", err)
 	}

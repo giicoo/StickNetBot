@@ -9,6 +9,7 @@ import (
 
 	"github.com/giicoo/StickAIBot/config"
 	fsmService "github.com/giicoo/StickAIBot/internal/fsm_service"
+	resizeService "github.com/giicoo/StickAIBot/internal/resize_service"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	"github.com/sirupsen/logrus"
@@ -18,8 +19,9 @@ type APIBot struct {
 	log *logrus.Logger
 	cfg config.Config
 
-	b  *telego.Bot
-	bh *th.BotHandler
+	resizeService *resizeService.ResizeService
+	b             *telego.Bot
+	bh            *th.BotHandler
 
 	fsm *fsmService.FsmService
 
@@ -27,7 +29,7 @@ type APIBot struct {
 	done chan struct{}
 }
 
-func CreateBot(log *logrus.Logger, cfg config.Config, fsm *fsmService.FsmService) (*APIBot, error) {
+func CreateBot(log *logrus.Logger, cfg config.Config, fsm *fsmService.FsmService, resizeService *resizeService.ResizeService) (*APIBot, error) {
 	// initialize bot
 	b, err := telego.NewBot(cfg.TOKEN, telego.WithDefaultDebugLogger())
 	if err != nil {
@@ -53,6 +55,8 @@ func CreateBot(log *logrus.Logger, cfg config.Config, fsm *fsmService.FsmService
 	api := &APIBot{
 		log: log,
 		cfg: cfg,
+
+		resizeService: resizeService,
 
 		b:  b,
 		bh: bh,

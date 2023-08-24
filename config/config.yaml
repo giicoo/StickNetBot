@@ -8,7 +8,7 @@ welcome:
   
 classicFsm:
   start:
-    phrase: "Начало фсм \n Напишите название"
+    phrase: " \n Напишите название"
     inline_keyboard: 
       row_1:
         btn_1: "Отмена"

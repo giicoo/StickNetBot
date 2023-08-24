@@ -10,4 +10,3 @@ COPY . .
 RUN apt-get update
 RUN apt-get install -y libvips libvips-dev
 RUN go get -u gopkg.in/h2non/bimg.v1
-
