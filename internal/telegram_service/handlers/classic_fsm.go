@@ -133,10 +133,7 @@ func PhotoClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmS
 
 		// next fsm -> set+photo
 		fsm.FsmMap[user_id.ID].Fsm.Event(context.WithValue(context.Background(), struct{}{}, photo), "photo")
-		fsm.FsmMap[user_id.ID].StickerPack.Sticks = append(fsm.FsmMap[user_id.ID].StickerPack.Sticks, struct {
-			Photo string
-			Emoji string
-		}{Photo: msg.Document.FileID})
+		fsm.FsmMap[user_id.ID].StickerPack.Sticks = append(fsm.FsmMap[user_id.ID].StickerPack.Sticks, telego.InputSticker{Sticker: telego.InputFile{FileID: msg.Document.FileID}})
 
 	}
 }
@@ -149,7 +146,7 @@ func EmojiClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmS
 
 		// next fsm -> set_emoji
 		fsm.FsmMap[user_id.ID].Fsm.Event(context.WithValue(context.Background(), struct{}{}, emoji), "emoji")
-		fsm.FsmMap[user_id.ID].StickerPack.Sticks[len(fsm.FsmMap[user_id.ID].StickerPack.Sticks)-1].Emoji = emoji
+		fsm.FsmMap[user_id.ID].StickerPack.Sticks[len(fsm.FsmMap[user_id.ID].StickerPack.Sticks)-1].EmojiList = append(fsm.FsmMap[user_id.ID].StickerPack.Sticks[len(fsm.FsmMap[user_id.ID].StickerPack.Sticks)-1].EmojiList, emoji)
 		// message with inline_keyboard
 		inline_keyboard := tu.InlineKeyboard(
 			tu.InlineKeyboardRow(
@@ -194,6 +191,45 @@ func MoreClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmSe
 		msg.ParseMode = telego.ModeHTML
 
 		_, err := bot.SendMessage(msg)
+		if err != nil {
+			log.Errorf("send message to %v chat: %v", user_id, err)
+		}
+
+		// answer callback query
+		call := tu.CallbackQuery(callback_id)
+
+		err = bot.AnswerCallbackQuery(call)
+		if err != nil {
+			log.Errorf("send answer callback to %v callback: %v", callback_id, err)
+		}
+	}
+}
+
+func CreateClassicFsm(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmService) th.Handler {
+	return func(bot *telego.Bot, update telego.Update) {
+		user_id := tu.ID(update.CallbackQuery.From.ID)
+		callback_id := update.CallbackQuery.ID
+
+		stick_pack := fsm.FsmMap[user_id.ID].StickerPack
+
+		_, _ = bot.GetMyName(&telego.GetMyNameParams{})
+		log.Info(stick_pack.Sticks)
+		err := bot.CreateNewStickerSet(&telego.CreateNewStickerSetParams{
+			UserID:        user_id.ID,
+			Title:         fmt.Sprintf("%v || @StickNetBot", stick_pack.Title),
+			Name:          fmt.Sprintf("%v_%v_by_StickNetBot", stick_pack.Title, user_id.ID),
+			Stickers:      stick_pack.Sticks,
+			StickerFormat: "static",
+		})
+
+		if err != nil {
+			log.Errorf("create sticker pack from %v: %v", user_id, err)
+		}
+
+		msg := tu.Message(user_id, fmt.Sprintf("https://t.me/addstickers/%v_%v_by_StickNetBot", stick_pack.Title, user_id.ID))
+		msg.ParseMode = telego.ModeHTML
+
+		_, err = bot.SendMessage(msg)
 		if err != nil {
 			log.Errorf("send message to %v chat: %v", user_id, err)
 		}

@@ -5,14 +5,12 @@ import (
 	"fmt"
 
 	"github.com/looplab/fsm"
+	"github.com/mymmrac/telego"
 )
 
 type sticker_pack struct {
 	Title  string
-	Sticks []struct {
-		Photo string
-		Emoji string
-	}
+	Sticks []telego.InputSticker
 }
 
 type classicFsm *fsm.FSM
