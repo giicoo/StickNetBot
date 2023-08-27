@@ -21,7 +21,7 @@ func NewResizeService(time_out time.Duration) *ResizeService {
 }
 
 func (r *ResizeService) ResizeImage(buffer []byte, file_name string, codec string) error {
-	if codec == "image/jpeg" {
+	if codec == "image/jpeg" || codec == "image/webp" {
 		buff, err := bimg.NewImage(buffer).Convert(bimg.PNG)
 		buffer = buff
 		if err != nil {
@@ -54,6 +54,20 @@ func (r *ResizeService) ResizeImage(buffer []byte, file_name string, codec strin
 			x, y = int(size_x/k), int(size_y/k)
 		}
 
+		buffer, err = bimg.NewImage(buffer).ForceResize(x, y)
+		if err != nil {
+			return fmt.Errorf("resize img '%v': %v", file_name, err)
+		}
+	} else {
+		x, y := 512, 512
+		if size_x > size_y {
+			k := size_x / 512
+			x, y = 512, int(size_y/k)
+		}
+		if size_y > size_x {
+			k := size_y / 512
+			x, y = int(size_x/k), 512
+		}
 		buffer, err = bimg.NewImage(buffer).ForceResize(x, y)
 		if err != nil {
 			return fmt.Errorf("resize img '%v': %v", file_name, err)

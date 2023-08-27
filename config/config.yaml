@@ -18,7 +18,7 @@ classicFsm:
       row_1:
         btn_1: "Отмена"
   photo:
-    phrase: "Отправьте эмоджи %v"
+    phrase: "Отправьте эмоджи "
     inline_keyboard: 
       row_1:
         btn_1: "Отмена"

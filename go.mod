@@ -12,6 +12,8 @@ require (
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/looplab/fsm v1.0.1 // indirect
+	github.com/lovelydeng/gomoji v0.0.0-20221120141925-ea446dc92ac0 // indirect
+	github.com/lovelydeng/uniseg v0.0.0-20221120141218-19f3806b842a // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect

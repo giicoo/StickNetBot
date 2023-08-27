@@ -9,68 +9,44 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Command Start with "Welcome phrase"; inline keyboard from config
-func Start(cfg config.Config, log *logrus.Logger) th.Handler {
-	return func(bot *telego.Bot, update telego.Update) {
+type CommandHandler struct {
+	cfg config.Config
+	log *logrus.Logger
 
-		chat_id := tu.ID(update.Message.From.ID)
-		msg_text := cfg.WelcomeGroup.Phrase
-
-		inlineKeyboard := tu.InlineKeyboard(
-			tu.InlineKeyboardRow(
-				tu.InlineKeyboardButton(cfg.WelcomeGroup.InlineKeyboard.Row1.Btn1).WithCallbackData("create_sticker_pack"),
-			),
-			tu.InlineKeyboardRow(
-				tu.InlineKeyboardButton(cfg.WelcomeGroup.InlineKeyboard.Row2.Btn1).WithCallbackData("manage_sticker_packs"),
-			),
-		)
-
-		msg := tu.Message(chat_id, msg_text).WithReplyMarkup(inlineKeyboard)
-		msg.ParseMode = telego.ModeHTML
-
-		_, err := bot.SendMessage(msg)
-		if err != nil {
-			log.Errorf("Err send message to %v chat: %v", chat_id, err)
-		}
-	}
+	fsm *fsmService.FsmService
 }
 
-func CancelStart(cfg config.Config, log *logrus.Logger, fsm *fsmService.FsmService) th.Handler {
+// Command Start with "Welcome phrase"; inline keyboard from config
+func (h *CommandHandler) Start() th.Handler {
 	return func(bot *telego.Bot, update telego.Update) {
-		// init vars
-		callback_id := update.CallbackQuery.ID
+		// vars
+		user_id := tu.ID(update.Message.From.ID)
 
-		chat_id := tu.ID(update.CallbackQuery.From.ID)
-
-		callback := tu.CallbackQuery(callback_id)
-
-		msg_text := cfg.WelcomeGroup.Phrase
-
-		// delete fsm
-		fsm.DeleteFsm(chat_id.ID)
-
-		// start message
+		// keyboard
 		inlineKeyboard := tu.InlineKeyboard(
 			tu.InlineKeyboardRow(
-				tu.InlineKeyboardButton(cfg.WelcomeGroup.InlineKeyboard.Row1.Btn1).WithCallbackData("create_sticker_pack"),
+				tu.InlineKeyboardButton(
+					h.cfg.WelcomeGroup.InlineKeyboard.Row1.Btn1,
+				).WithCallbackData("create_sticker_pack"),
 			),
 			tu.InlineKeyboardRow(
-				tu.InlineKeyboardButton(cfg.WelcomeGroup.InlineKeyboard.Row2.Btn1).WithCallbackData("manage_sticker_packs"),
+				tu.InlineKeyboardButton(
+					h.cfg.WelcomeGroup.InlineKeyboard.Row2.Btn1,
+				).WithCallbackData("manage_sticker_packs"),
 			),
 		)
 
-		msg := tu.Message(chat_id, msg_text).WithReplyMarkup(inlineKeyboard)
-		msg.ParseMode = telego.ModeHTML
+		// create msg
+		msg_text := h.cfg.WelcomeGroup.Phrase
+		msg := tu.Message(
+			user_id,
+			msg_text,
+		).WithReplyMarkup(inlineKeyboard).WithParseMode("HTML")
 
+		// send msg
 		_, err := bot.SendMessage(msg)
 		if err != nil {
-			log.Errorf("Err send message to %v chat: %v", chat_id, err)
-		}
-
-		// answer callback
-		err = bot.AnswerCallbackQuery(callback)
-		if err != nil {
-			log.Errorf("answer callback to %v: %v", callback_id, err)
+			h.log.Errorf("err send message to %v user: %v", user_id, err)
 		}
 	}
 }
